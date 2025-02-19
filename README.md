@@ -39,6 +39,13 @@ where barcode = ' ';
   - Unfortunately, the OCR model seems to really be struggling on some of these store names (i.e. /MART, B, 1AINTING CUSVAL BISTRO, A CME DURP SUPERAK, etc.) It may be outside of the scope of this assignment, but it seems it would be useful for the OCR model to have a pre-set list of available retailer names to choose from through string similarity matching (trigram matching, jarowinkler similarity, etc).
   - Again, the assessment page states that barcode should be represented as an integer in this table, which isn't possible since UPC's often lead with a 0.
 
+## Data Quality Issues - Users
+I found the following issues with the data quality of the `users` table:
+- I noticed that user_id `5f31fc048fa1e914d38d6952` has a birth_date > created_date for the account, which isn't possible. There need to be greater guardrails placed on the frontend for birth date selection. 
+- There's really no need for created_date and birth_date to be represented as timestamps. These should just be date values. 
+- There are again several instances in which empty strings are present in the data set and should be replaced by NULLs. 
+- In the gender column, "unknown" should also be replaced by NULLs. "Non-Binary" and "non_binary" should be consolidated into a single value, as well as "Prefer not to say" with "prefer_not_to_say", and "not_listed" with "My gender isn't listed". I imagine there would need to be some sort of collaboration with the front-end team to ensure standardization in the dropdown for gender selection.
+
 
 
 
