@@ -86,8 +86,8 @@ order by 2 desc;
 ```
 
 3. What is the percentage of sales in the Health & Wellness category by generation?
-- In this case, I would not feel comfortable making similar extrapolations as above since we require birth dates from the users table to create the generation categories and I believe that there could be significant differences in basket composition for different generation groups.
-- The percentage of sales in the Health & Wellness category by generation breaks down as follows:
+- Again, given the little overlap between the users and transactions table, we can only assume the below to be true if the small subset of users that _do_ overlap between these two tables are representative of the entire population of active users in the transactions set. 
+- If assuming the above, the percentage of sales in the Health & Wellness category by generation breaks down as follows:
   1. Boomers: 48.29%
   2. Gen X: 31.51%
   3. Millenials: 20.2%
