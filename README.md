@@ -1,5 +1,5 @@
 # Fetch Technical Assessment - James Michael Harp
-This repo hosts my technical assessment responses for the Fetch Data Analyst role. Below you will find my responses with short code snippets included, while any longer SQL queries will be linked within. Thanks for reading!
+This repo hosts my technical assessment responses for the Fetch Data Analyst role. Below you will find my responses with short code snippets included. Please note that all answers are written in PostgreSQL, however, I am most proficient and comfortable with Snowflake. Thanks for reading!
 
 ## Data Quality Issues - Products
 
@@ -37,6 +37,7 @@ from transactions
 where barcode = ' ';
 ```
   - Unfortunately, the OCR model seems to really be struggling on some of these store names (i.e. /MART, B, 1AINTING CUSVAL BISTRO, A CME DURP SUPERAK, etc.) It may be outside of the scope of this assignment, but it seems it would be useful for the OCR model to have a pre-set list of available retailer names to choose from through string similarity matching (trigram matching, jarowinkler similarity, etc).
+  - `final_sale` is a bit confusing as a column. It's unclear to me whether this is the total price * quantity of the given receipt line or if this is simply the price per unit. For the purposes of this exercise, I will assume that this is the final price of the receipt line (unit price * quantity).
   - Again, the assessment page states that barcode should be represented as an integer in this table, which isn't possible since UPC's often lead with a 0.
 
 ## Data Quality Issues - Users
@@ -88,9 +89,9 @@ order by 2 desc;
 3. What is the percentage of sales in the Health & Wellness category by generation?
 - Again, given the little overlap between the users and transactions table, we can only assume the below to be true if the small subset of users that _do_ overlap between these two tables are representative of the entire population of active users in the transactions set. 
 - If assuming the above, the percentage of sales in the Health & Wellness category by generation breaks down as follows:
-  1. Boomers: 48.29%
-  2. Gen X: 31.51%
-  3. Millenials: 20.2%
+  1. Boomers: 44.34%
+  2. Gen X: 24.49%
+  3. Millenials: 31.18%
 ```
 with health_wellness_gmv_by_generation as (
 	select 
@@ -109,7 +110,7 @@ with health_wellness_gmv_by_generation as (
 				then 'Gen Z'
 			else 'Gen Alpha'
 		end as generation
-	, category_1, sum(t.final_quantity*t.final_sale) as sum_gmv
+	, category_1, sum(t.final_sale) as sum_gmv
 	from transactions t
 	join products p on p.barcode = t.barcode
 	join users u on u.id = t.user_id
@@ -119,4 +120,31 @@ with health_wellness_gmv_by_generation as (
 select generation, sum_gmv, round(100*sum_gmv/(select sum(sum_gmv) from health_wellness_gmv_by_generation),2) as percent_gmv
 from health_wellness_gmv_by_generation;     
 ```
-
+4. Who are Fetch's power users?
+- If only analyzing users that can be connected to the transactions table, then I would define a "power user" as someone with 3 or more transactions logged in Fetch, as 3 is the highest number of logged transactions per user in this set.
+- Given the above, Fetch's power users are overwhelmingly female, an average age of 44 years old, and have had an account for a little over 3 years on average. 
+```
+  with power_users as (
+	select user_id, count(distinct receipt_id) as transaction_count
+		from transactions t
+		join users u on u.id = t.user_id
+		group by 1
+		having count(distinct receipt_id) >= 3)
+	
+	select mode() within group (order by gender) as most_common_gender, avg(date_part('year',age(current_date, birth_date))) as average_age, avg(age(current_date, created_date)) as average_time_since_account_creation
+	from users 
+	where id in (select user_id from power_users);
+ ```
+5. Which is the leading brand in the Dips & Salsa category?
+- Answer: The leading brand in the Dips & Salsa category for 2024 is Tostitos with 36 measured receipt scans and $260.99 in GMV.
+```
+select date_part('year', purchase_date) as year, brand, count(distinct t.receipt_id) as receipt_scans, sum(final_sale) as sum_gmv
+from transactions t
+join products p on p.barcode = t.barcode
+where category_2 = 'Dips & Salsa'
+group by 1,2
+order by 4 desc;
+```
+6. At what percent has Fetch grown year over year?
+- Answer: Since the supplied transaction table only includes 2024 transactions, this answer can only be answered as a measure of growth in the size of the user base.
+- Fetch has managed to increase its user base by 50.4% YoY on average per since 2014, although the rate of increase has been falling YoY from 2018 onward. 
