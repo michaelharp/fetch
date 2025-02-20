@@ -190,6 +190,7 @@ Additionally, I did notice an interesting trend in the `users` table where the o
 I'm very interested to hear your thoughts! Let me know if I can be of any assistance with tightening up our OCR matching for store names or assisting with anomaly detection on the user-inputted demographic data. Hope this is helpful. 
 
 Thanks!
+
 Michael Harp
 
 
