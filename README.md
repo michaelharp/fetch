@@ -146,5 +146,52 @@ group by 1,2
 order by 4 desc;
 ```
 6. At what percent has Fetch grown year over year?
-- Answer: Since the supplied transaction table only includes 2024 transactions, this answer can only be answered as a measure of growth in the size of the user base.
-- Fetch has managed to increase its user base by 50.4% YoY on average per since 2014, although the rate of increase has been falling YoY from 2018 onward. 
+- Answer: Since the supplied transaction table only includes 2024 transactions, this answer can only be answered as a measure of growth in the size of the user base in `users`.
+- Fetch has managed to increase its user base by 50.4% YoY on average since 2014, although the rate of increase has been falling YoY from 2017 onward. 
+```
+with user_data as (
+  select
+    date_part('year', created_date) as year,
+    count(*)
+  from users
+  group by 1
+),
+
+yearly_sums as (
+
+select
+  year,
+  sum(count) over (order by year asc rows between unbounded preceding and current row) as total_user_base
+  from user_data),
+  
+ yoy as (
+  
+  select *,
+ (total_user_base - lag(total_user_base) over (order by year))/total_user_base as year_over_year_increase
+  from yearly_sums y)  
+  
+  select * --avg(year_over_year_increase) as avg_user_base_growth_per_year  
+  from yoy;
+```
+
+# Example Communication
+
+Hi there!
+
+I was recently tasked with some analysis on the `users`, `transactions`, and `products` tables, and I wanted to share my findings with you. 
+
+A few key takeaways:
+- We seem to have a real problem with whitespace and empty strings in our tables where values should be NULL, which could really lead to inaccurate analysis if someone isn't careful.
+- There seems to be an issue with the `users` table-- perhaps it's somehow been truncated? Very few of the user_id's in the `transactions` table are represented in the `users` table, which makes certain types of demographic analysis impossible or unreliable.
+- Unfortunately, the OCR model seems to really be struggling on some of the store names in `transactions` (i.e. /MART, B, 1AINTING CUSVAL BISTRO, A CME DURP SUPERAK, etc.) Perhaps it would be useful for the model to have a pre-set list of available retailer names to choose from through string similarity matching (trigram matching, jarowinkler similarity, etc)?
+
+Additionally, I did notice an interesting trend in the `users` table where the overwhelming majority of inputted birth_date values are set to `1970-01-01 00:00:00`. Is this the default birth_date set in the UI when users are asked to provide their DOB? Between these, many having no DOB provided, and many users with inputted ages of over 100 or under 10, I suspect that this data set might not be particularly reliable. Perhaps we need some sort of more robust verification process? 
+
+I'm very interested to hear your thoughts! Let me know if I can be of any assistance with tightening up our OCR matching for store names or assisting with anomaly detection on the user-inputted demographic data. Hope this is helpful. 
+
+Thanks!
+Michael Harp
+
+
+
+
