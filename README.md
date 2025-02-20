@@ -41,14 +41,33 @@ where barcode = ' ';
 
 ## Data Quality Issues - Users
 I found the following issues with the data quality of the `users` table:
-- I noticed that user_id `5f31fc048fa1e914d38d6952` has a birth_date > created_date for the account, which isn't possible. There need to be greater guardrails placed on the frontend for birth date selection. 
+- I noticed that user_id `5f31fc048fa1e914d38d6952` has a birth_date > created_date for the account, which isn't possible. There need to be greater guardrails placed on the frontend for birth date selection.
+- There are very few user_ids in the `transactions` table that are actually present here. It seems that this table must be missing a lot of data. 
 - There's really no need for created_date and birth_date to be represented as timestamps. These should just be date values. 
 - There are again several instances in which empty strings are present in the data set and should be replaced by NULLs. 
 - In the gender column, "unknown" should also be replaced by NULLs. "Non-Binary" and "non_binary" should be consolidated into a single value, as well as "Prefer not to say" with "prefer_not_to_say", and "not_listed" with "My gender isn't listed". I imagine there would need to be some sort of collaboration with the front-end team to ensure standardization in the dropdown for gender selection.
 
+# SQL Assessment
+1. What are the top 5 brands by receipts scanned among users 21 and over?
+- Answer: Unfortunately, there seems to be very little overlap between user_id's in the `transactions` table and ids in the `users` table. However, if taking the distribution of ages in the `users` table at face value and assuming a similar distribution exists for users in the `transactions` table, then it can be assumed that 89.9% of users scanning receipts are over the age of 21.
+  - Furthermore, given how much of a gap there is in receipt scan count between the top five brands and the remaining brands in the general `transactions` set, it can be assumed with some degree of confidence that the top five brands for users over the age of 21 would be the same as the top five for the entire user set, assuming that the estimated 11.1% of users under the age of 21 don't deviate in order behavior to an extreme amount from the over 21 population. 
+    - Unfortunately, since there are no users in the `transactions` table that can be proven to be under the age of 21, we cannot make any confident assumptions one way or another about the order behavior of this user set.
+- If assuming somewhat similar order behavior from the under-21 set as the over 21-set, the top 5 brands by receipts scanned among users 21 and over are as follows:
+  1. COCA-COLA
+  2. GREAT VALUE
+  3. PEPSI
+  4. EQUATE
+  5. LAY'S
 
+```
+select brand, count(distinct receipt_id) as distinct_receipts_count
+from transactions t
+join products p on p.barcode = t.barcode
+where brand is not null
+group by 1
+order by 2 desc
+```
 
-
-
+2. 
 
 
