@@ -68,6 +68,55 @@ group by 1
 order by 2 desc
 ```
 
-2. 
+2. What are the top 5 brands by sales among users that have had their account for at least six months?
+- Answer: Given the lack of overlap between the `users` table and `transactions` table mentioned above, similar extrapolation must take place to provide an answer here. If the user base in the `transactions` table is assumed to have the same distribution of "created_date" as the user base present in the `users` table, then those with accounts older than 6 months would represent 98.3% of scanned transactions.
+- This being the case, it can be assumed that the top 5 brands by sales among users that have had their account for >= 6 months are as follows:
+  1. PEPSI
+  2. COCA-COLA
+  3. EQUATE
+  4. GREAT VALUE
+  5. HERSHEY'S
+```
+select brand, sum(t.final_quantity*t.final_sale) as sum_gmv
+from transactions t
+join products p on p.barcode = t.barcode
+where brand is not null
+group by 1
+order by 2 desc;
+```
 
+3. What is the percentage of sales in the Health & Wellness category by generation?
+- In this case, I would not feel comfortable making similar extrapolations as above since we require birth dates from the users table to create the generation categories and I believe that there could be significant differences in basket composition for different generation groups.
+- The percentage of sales in the Health & Wellness category by generation breaks down as follows:
+  1. Boomers: 48.29%
+  2. Gen X: 31.51%
+  3. Millenials: 20.2%
+```
+with health_wellness_gmv_by_generation as (
+	select 
+		case
+			when date_part('year', age(current_date, birth_date)) > 98
+				then 'WWII'
+			when date_part('year', age(current_date, birth_date)) between 80 and 97
+				then 'Post-War'		
+			when date_part('year', age(current_date, birth_date)) between 61 and 79
+				then 'Boomers'
+			when date_part('year', age(current_date, birth_date)) between 45 and 60
+				then 'Gen X'
+			when date_part('year', age(current_date, birth_date)) between 29 and 44
+				then 'Millenials'
+			when date_part('year', age(current_date, birth_date)) between 13 and 28
+				then 'Gen Z'
+			else 'Gen Alpha'
+		end as generation
+	, category_1, sum(t.final_quantity*t.final_sale) as sum_gmv
+	from transactions t
+	join products p on p.barcode = t.barcode
+	join users u on u.id = t.user_id
+	where category_1 = 'Health & Wellness'
+	group by 1,2)
+	
+select generation, sum_gmv, round(100*sum_gmv/(select sum(sum_gmv) from health_wellness_gmv_by_generation),2) as percent_gmv
+from health_wellness_gmv_by_generation;     
+```
 
